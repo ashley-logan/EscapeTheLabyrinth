@@ -1,77 +1,28 @@
-#include "EscapeTheLabyrinth.h"
 #include "maze.h"
+#include <iomanip>
+#include <iostream>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 using std::string;
-using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
-MazeCell *MazeCell::*GetMember(const char direction) {
-  switch (direction) {
-  case 'N':
-    return &MazeCell::north;
-  case 'E':
-    return &MazeCell::east;
-  case 'S':
-    return &MazeCell::south;
-  case 'W':
-    return &MazeCell::west;
-  default:
-    return nullptr;
-  }
-}
-
-void acquireItem(const string whatsHere, bool &Spellbook, bool &Potion,
-                 bool &Wand) {
-  if (whatsHere == "Spellbook") {
-    Spellbook = true;
-  } else if (whatsHere == "Potion") {
-    Potion = true;
-  } else if (whatsHere == "Wand") {
-    Wand = true;
-  }
-  return;
-}
-
-string &LikeLadder(vector<string> &pathsVec, MazeCell *start) {
-  bool Spellbook = false, Potion = false, Wand = false;
-
-  string thisPath; // holds the sequence of directions up to the current cell;
-  vector<string> pathsList; // holds all currently valid paths
-  pathsList.push_back(thisPath);
-
-  MazeCell *thisCell = start;
-
-  while (!pathsList.empty()) {
-    thisPath = pathsList.back();
-    pathsList.pop_back();
-
-    for (char direction : {'N', 'E', 'S', 'W'}) {
-      MazeCell *MazeCell::*memPtr = GetMember(direction);
-
-      if (!memPtr) {
-        continue;
-      }
-
-      if (thisCell->*memPtr) {
-        if ((thisCell->*memPtr)->whatsHere != "") {
-          acquireItem((thisCell->*memPtr)->whatsHere, Spellbook, Potion, Wand);
-        }
-
-        if (Spellbook && Potion && Wand) {
-          thisPath += direction;
-          return thisPath;
-        }
-        thisPath += direction;
-        pathsList.push_back(thisPath);
-      }
-    }
-  }
-}
+// MazeCell *MazeCell::*GetMember(const char direction) {
+//   switch (direction) {
+//   case 'N':
+//     return &MazeCell::north;
+//   case 'E':
+//     return &MazeCell::east;
+//   case 'S':
+//     return &MazeCell::south;
+//   case 'W':
+//     return &MazeCell::west;
+//   default:
+//     return nullptr;
+//   }
+// }
 
 bool isBacktrack(char prevMove, char nextMove) {
   // returns true if prevMove and nextMove are opposites
@@ -89,56 +40,68 @@ bool isBacktrack(char prevMove, char nextMove) {
   }
 }
 
-void PathFinder(string &thisPath, MazeCell *thisCell,
-                unordered_set<string> &itemsFound) {
-  char lastMove =
-      thisPath.empty()
-          ? '\0'
-          : thisPath.back(); // get the direction of the previous move
-  bool allowBacktrack =
-      false; // whether or not the next cell can be in the opposite direction of
-             // the previous move (backtracking)
-
-  if (!thisCell) {
-    // if thisCell is a dead end, do not continue this recursion path
-    return;
+MazeCell *MoveCell(char thisMove, MazeCell *thisCell) {
+  switch (thisMove) {
+  case 'N':
+    return thisCell->north;
+  case 'E':
+    return thisCell->east;
+  case 'S':
+    return thisCell->south;
+  case 'W':
+    return thisCell->west;
+  default:
+    return nullptr;
   }
+}
+
+string PathFinder(char thisMove, MazeCell *thisCell,
+                  unordered_set<string> itemsFound, int recursionDepth) {
+
+  std::cout << std::setw(recursionDepth) << std::right << thisMove << std::endl;
+  bool allowBacktrack = false;
 
   if (!thisCell->whatsHere.empty()) {
-    // if there is an item in this cell
     if (itemsFound.count(thisCell->whatsHere)) {
-      // if this item has already been found, the search is looping; do not
-      // continue this recursion path
-      return;
+      return "";
     }
     itemsFound.insert(thisCell->whatsHere);
-    allowBacktrack = true; // allow backtracking since item found
+    allowBacktrack = true;
   }
 
   if (itemsFound.size() == 3) {
-    // all items found, maze complete
-    return;
+    return string(1, thisMove);
   }
 
   for (char mv : {'N', 'E', 'S', 'W'}) {
-    if (!allowBacktrack && isBacktrack(lastMove, mv)) {
+    if (!allowBacktrack && isBacktrack(thisMove, mv)) {
+      // if next move backtracks and backtracking is not allowed, skip move
       continue;
     }
 
-    MazeCell *MazeCell::*nextCell = GetMember(mv);
-    thisPath.push_back(mv);
+    if (MazeCell *nextCell = MoveCell(mv, thisCell)) {
+      // if next cell is not nullptr, check next cell
+      string newPath = PathFinder(mv, nextCell, itemsFound, recursionDepth + 1);
 
-    PathFinder(thisPath, thisCell->*nextCell, itemsFound);
-
-    thisPath.pop_back();
+      if (newPath != "") {
+        return newPath.insert(0, 1, thisMove);
+      }
+    }
   }
+
+  return "";
 }
 /*
 condition for path to be added to pathsVector:
     Spellbook, Potion, and Wand found
 */
+const string netID = "aloga";
+
 int main() {
+  Maze m(4, 4);
+  MazeCell *start = m.mazeFor(netID);
   unordered_set<string> itemsFound;
-  string finalPath;
-  bool allowBacktrack = false;
+  itemsFound.reserve(3);
+  string finalPath = PathFinder('\0', start, itemsFound, 1);
+  std::cout << "Final Path: " << finalPath << std::endl;
 }

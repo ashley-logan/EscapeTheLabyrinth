@@ -59,6 +59,7 @@ string PathFinder(char thisMove, MazeCell *thisCell,
                   unordered_set<string> itemsFound, int recursionDepth) {
 
   std::cout << std::setw(recursionDepth) << std::right << thisMove << std::endl;
+  std::cout << std::setw(recursionDepth) << std::right << "At: " << thisCell << std::endl;
   bool allowBacktrack = false;
 
   if (!thisCell->whatsHere.empty()) {
@@ -91,10 +92,48 @@ string PathFinder(char thisMove, MazeCell *thisCell,
 
   return "";
 }
-/*
-condition for path to be added to pathsVector:
-    Spellbook, Potion, and Wand found
-*/
+
+void ShortestPathFinder(vector<string>& paths, string thisPath, MazeCell *thisCell,
+                  unordered_set<string> itemsFound, int recursionDepth) {
+    // instead of returning mv + Self(), add mv to thisPath
+    // instead of returning at items.size() == 3, add thisPath to paths
+
+  std::cout << std::setw(recursionDepth) << std::right << thisPath.back() << std::endl;
+  std::cout << std::setw(recursionDepth) << std::right << "At: " << thisCell << std::endl;
+  bool allowBacktrack = false;
+
+  if (!thisCell->whatsHere.empty()) {
+    if (itemsFound.count(thisCell->whatsHere)) {
+      return;
+    }
+    itemsFound.insert(thisCell->whatsHere);
+    allowBacktrack = true;
+  }
+
+  if (itemsFound.size() == 3) {
+    std::cout << "Path found: " << thisPath << std::endl;
+    paths.push_back(thisPath);
+    return;
+  }
+
+  for (char mv : {'N', 'E', 'S', 'W'}) {
+    if (!allowBacktrack && isBacktrack(thisPath.back(), mv)) {
+      // if next move backtracks and backtracking is not allowed, skip move
+      continue;
+    }
+
+    if (MazeCell *nextCell = MoveCell(mv, thisCell)) {
+      // if next cell is not nullptr, check next cell
+
+      thisPath += mv;
+      ShortestPathFinder(paths, thisPath, nextCell, itemsFound, recursionDepth + 1);
+      thisPath.pop_back();
+
+    }
+  }
+
+  return;
+}
 const string netID = "aloga";
 
 int main() {
@@ -102,6 +141,11 @@ int main() {
   MazeCell *start = m.mazeFor(netID);
   unordered_set<string> itemsFound;
   itemsFound.reserve(3);
-  string finalPath = PathFinder('\0', start, itemsFound, 1);
-  std::cout << "Final Path: " << finalPath << std::endl;
+  // string finalPath = PathFinder('\0', start, itemsFound, 1);
+  vector<string> finalPaths;
+  ShortestPathFinder(finalPaths, string(1, '\0'), start, itemsFound, 1);
+  for (string& path : finalPaths) {
+    std::cout << "Path: " << path << std::endl;
+  }
+  // std::cout << "Final Path: " << finalPath << std::endl;
 }

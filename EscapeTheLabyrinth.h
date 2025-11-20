@@ -22,6 +22,15 @@ const string kYourNetID = "aloga";
 
 /* Change these constants to contain the paths out of your mazes. */
 const string kPathOutOfRegularMaze = "ESWSSNNENESESSNWSW";
+const string pathOutRegTest = "EESESSNNWNWSWSSNNENESESWSW";
+const string testPaths[] = {
+    "EESESSNNWNWSWSSNNENESESWSW",
+    "EESESSNWSWENENWNWSWSS",
+    "EESESWSWENENWNWSWSSNNENESESS",
+    "EESESWSWENESNNWNWSWSS",
+    "ESWSSNNENESESSNWSW",
+    "ESWSSNNENESESWSWENES"
+};
 const string kPathOutOfTwistyMaze = "TODO: Replace this string with your path out of the twisty maze.";
 
 

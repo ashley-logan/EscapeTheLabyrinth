@@ -54,7 +54,7 @@ public:
   // Called automatically by to construct a 4x4 Grid. 
   // All elements initialized to default value of T.
   //
-  Grid(): NumRows(4), Rows(new ROW<T>[4]) {}
+  Grid(): Rows(new ROW<T>[4]), NumRows(4) {}
 
   Grid(size_t R, size_t C) : NumRows(R) {
     Rows = new ROW<T>[R];
@@ -139,17 +139,11 @@ public:
   //    cout << grid(r, c) << endl;
   //
   T& operator()(size_t r, size_t c) {
-      T temp;
 
-
-      //-------------------------------------------------
-      // TODO:  handle error case
-      if (r < NumRows && c < Rows[0].NumCols) {
-        return Rows[r].Cols[c];
+      if (r >= NumRows || c >= Rows[0].NumCols) {
+        throw invalid_argument("Index out of bounds");
       }
-
-
-      return 0;
+      return Rows[r].Cols[c];
   }
 
   //

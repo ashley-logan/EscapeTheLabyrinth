@@ -10,56 +10,6 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
-void FindPath(vector<string> &pathsVector, MazeCell *thisCell, string path,
-              unordered_map<string, bool> &itemsFound) {
-
-  bool allowBacktrack = false;
-
-  if (thisCell->whatsHere != "") {
-    //
-    // TODO if already true, function is looping, end recursion tree
-    if (itemsFound[thisCell->whatsHere]) {
-      return;
-    }
-
-    itemsFound[thisCell->whatsHere] = true;
-    allowBacktrack = true;
-  }
-
-  if (itemsFound["Spellbook"] && itemsFound["Potion"] && itemsFound["Wand"]) {
-    pathsVector.push_back(path);
-    return;
-  }
-
-  // if(checkCache && cellCache.count(thisCell)) {
-  //     return;
-  // }
-
-  // cellCache.insert(thisCell);
-
-  char prevMove = allowBacktrack ? '\0' : path.back();
-
-  if (prevMove != 'S' && thisCell->north) {
-    path.push_back('N');
-    FindPath(thisCell->north, path);
-    path.pop_back();
-  }
-  if (prevMove != 'W' && thisCell->east) {
-    path.push_back('E');
-    FindPath(thisCell->east, path);
-    path.pop_back();
-  }
-  if (prevMove != 'N' && thisCell->south) {
-    path.push_back('S');
-    FindPath(thisCell->south, path);
-    path.pop_back();
-  }
-  if (prevMove != 'E' && thisCell->west) {
-    path.push_back('W');
-    FindPath(thisCell->west, path);
-    path.pop_back();
-  }
-}
 MazeCell *MazeCell::*GetMember(const char direction) {
   switch (direction) {
   case 'N':
@@ -108,8 +58,8 @@ string &LikeLadder(vector<string> &pathsVec, MazeCell *start) {
       }
 
       if (thisCell->*memPtr) {
-        if (thisCell->*memPtr->whatsHere != "") {
-          acquireItem(thisCell->*memPtr->whatsHere, Spellbook, Potion, Wand);
+        if ((thisCell->*memPtr)->whatsHere != "") {
+          acquireItem((thisCell->*memPtr)->whatsHere, Spellbook, Potion, Wand);
         }
 
         if (Spellbook && Potion && Wand) {
@@ -176,8 +126,9 @@ void PathFinder(string &thisPath, MazeCell *thisCell,
     }
 
     MazeCell *MazeCell::*nextCell = GetMember(mv);
+    thisPath.push_back(mv);
 
-    PathFinder(thisPath.append(mv), thisCell->*nextCell, itemsFound);
+    PathFinder(thisPath, thisCell->*nextCell, itemsFound);
 
     thisPath.pop_back();
   }

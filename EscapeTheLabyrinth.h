@@ -18,21 +18,60 @@ using namespace std;
  * Changing kYourNetID will change which maze you get back, 
  * which might invalidate all your hard work!
  */
-const string kYourNetID = "TODO: This string MUST be replaced with YOUR exact netID.";
+const string kYourNetID = "aloga";
 
 /* Change these constants to contain the paths out of your mazes. */
 const string kPathOutOfRegularMaze = "TODO: Replace this string with your path out of the normal maze.";
 const string kPathOutOfTwistyMaze = "TODO: Replace this string with your path out of the twisty maze.";
 
+int GetMove (char c) {
+    switch (c) {
+        case 'N':
+          break;
+        case 'E':
+          break;
+        case 'S':
+          break;
+        case 'W':
+          break;
+        default:
+          break;
+        }
+        return -1;
+}
+
+MazeCell* MovePtr(const MazeCell* curr, char c) {
+    // return the next position in the maze based on the direction char
+    switch (c) {
+        case 'N': return curr->north;
+        case 'E': return curr->east;
+        case 'S': return curr->south;
+        case 'W': return curr->west;
+        default: return nullptr;
+    }
+}
+
 bool isPathToFreedom(MazeCell *start, const string& moves) {
-    
-    
-    /* TO DO: Delete this comment and the next few lines, 
-     * then implement this function.
-     */
-    (void) start;
-    (void) moves;
-    return false;
+
+    bool Spellbook = false, Potion = false, Wand = false;
+    MazeCell* travMaze = start;
+    for (char c : moves) {
+        if (!travMaze) {
+            return false;
+        }
+        if (travMaze->whatsHere == "SpellBook") {
+            Spellbook = true;
+        }
+        else if (travMaze->whatsHere == "Potion") {
+            Potion = true;
+        }
+        else if (travMaze->whatsHere == "Wand") {
+            Wand = true;
+        }
+        travMaze = MovePtr(travMaze, c);
+    }
+    // if current position is valid and all 3 items have been acquired, return true, else false
+    return travMaze && Spellbook && Potion && Wand;
     
     
     

@@ -21,58 +21,53 @@ using namespace std;
 const string kYourNetID = "aloga";
 
 /* Change these constants to contain the paths out of your mazes. */
-const string kPathOutOfRegularMaze = "TODO: Replace this string with your path out of the normal maze.";
+const string kPathOutOfRegularMaze = "ESWSSNNENESESSNWSW";
 const string kPathOutOfTwistyMaze = "TODO: Replace this string with your path out of the twisty maze.";
 
-int GetMove (char c) {
-    switch (c) {
-        case 'N':
-          break;
-        case 'E':
-          break;
-        case 'S':
-          break;
-        case 'W':
-          break;
-        default:
-          break;
-        }
-        return -1;
-}
 
-MazeCell* MovePtr(const MazeCell* curr, char c) {
+void MovePtr(MazeCell*& curr, char c) {
     // return the next position in the maze based on the direction char
     switch (c) {
-        case 'N': return curr->north;
-        case 'E': return curr->east;
-        case 'S': return curr->south;
-        case 'W': return curr->west;
-        default: return nullptr;
+        case 'N': 
+            curr = curr->north;
+            return;
+        case 'E': 
+            curr = curr->east;
+            return;
+        case 'S': 
+            curr = curr->south;
+            return;
+        case 'W': 
+            curr = curr->west;
+            return;
+        default: 
+            curr = nullptr;
+            return;
     }
 }
 
 bool isPathToFreedom(MazeCell *start, const string& moves) {
 
     bool Spellbook = false, Potion = false, Wand = false;
-    MazeCell* travMaze = start;
     for (char c : moves) {
-        if (!travMaze) {
+        if (!start) {
             return false;
         }
-        if (travMaze->whatsHere == "SpellBook") {
+        MovePtr(start, c);
+        if (start->whatsHere == "Spellbook") {
+            // cout << "Found book!" << endl;
             Spellbook = true;
         }
-        else if (travMaze->whatsHere == "Potion") {
+        else if (start->whatsHere == "Potion") {
+            // cout << "Found potion!" << endl;
             Potion = true;
         }
-        else if (travMaze->whatsHere == "Wand") {
+        else if (start->whatsHere == "Wand") {
+            // cout << "Found wand!" << endl;
             Wand = true;
         }
-        travMaze = MovePtr(travMaze, c);
     }
     // if current position is valid and all 3 items have been acquired, return true, else false
-    return travMaze && Spellbook && Potion && Wand;
-    
-    
+    return start && Spellbook && Potion && Wand;
     
 }

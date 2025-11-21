@@ -3,26 +3,14 @@
 #include <iostream>
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 using std::string;
 using std::unordered_set;
+using std::unordered_map;
 using std::vector;
 
-// MazeCell *MazeCell::*GetMember(const char direction) {
-//   switch (direction) {
-//   case 'N':
-//     return &MazeCell::north;
-//   case 'E':
-//     return &MazeCell::east;
-//   case 'S':
-//     return &MazeCell::south;
-//   case 'W':
-//     return &MazeCell::west;
-//   default:
-//     return nullptr;
-//   }
-// }
 
 bool isBacktrack(char prevMove, char nextMove) {
   // returns true if prevMove and nextMove are opposites
@@ -55,52 +43,24 @@ MazeCell *MoveCell(char thisMove, MazeCell *thisCell) {
   }
 }
 
-string PathFinder(char thisMove, MazeCell *thisCell,
-                  unordered_set<string> itemsFound, int recursionDepth) {
+/* Parameter keyword/symbols:
+  const T = read-only by value (copy)
+  T& = read-and-write by reference (no-copy)
+  const T& = read-only by reference (no-copy)
+  const T* = pointer read-and-write; data read-only
+  T* const = pointer read-only; data read-and-write
+  const T* const = pointer read-only; data read-only
+*/
 
-  std::cout << std::setw(recursionDepth) << std::right << thisMove << std::endl;
-  std::cout << std::setw(recursionDepth) << std::right << "At: " << thisCell << std::endl;
-  bool allowBacktrack = false;
 
-  if (!thisCell->whatsHere.empty()) {
-    if (itemsFound.count(thisCell->whatsHere)) {
-      return "";
-    }
-    itemsFound.insert(thisCell->whatsHere);
-    allowBacktrack = true;
-  }
-
-  if (itemsFound.size() == 3) {
-    return string(1, thisMove);
-  }
-
-  for (char mv : {'N', 'E', 'S', 'W'}) {
-    if (!allowBacktrack && isBacktrack(thisMove, mv)) {
-      // if next move backtracks and backtracking is not allowed, skip move
-      continue;
-    }
-
-    if (MazeCell *nextCell = MoveCell(mv, thisCell)) {
-      // if next cell is not nullptr, check next cell
-      string newPath = PathFinder(mv, nextCell, itemsFound, recursionDepth + 1);
-
-      if (newPath != "") {
-        return newPath.insert(0, 1, thisMove);
-      }
-    }
-  }
-
-  return "";
-}
-
-void ShortestPathFinder(vector<string>& paths, string thisPath, MazeCell *thisCell,
-                  unordered_set<string> itemsFound, int recursionDepth) {
-    // instead of returning mv + Self(), add mv to thisPath
-    // instead of returning at items.size() == 3, add thisPath to paths
-
+void ShortestPathFinder(MazeCell *thisCell, vector<string>& paths, string thisPath = string(1, '\0'), unordered_set<string> itemsFound = {}, int recursionDepth = 1) {
+  static size_t minLen = 999;
   std::cout << std::setw(recursionDepth) << std::right << thisPath.back() << std::endl;
-  std::cout << std::setw(recursionDepth) << std::right << "At: " << thisCell << std::endl;
   bool allowBacktrack = false;
+
+  if (thisPath.length() > minLen) {
+    return;
+  }
 
   if (!thisCell->whatsHere.empty()) {
     if (itemsFound.count(thisCell->whatsHere)) {
@@ -111,8 +71,9 @@ void ShortestPathFinder(vector<string>& paths, string thisPath, MazeCell *thisCe
   }
 
   if (itemsFound.size() == 3) {
-    std::cout << "Path found: " << thisPath << std::endl;
     paths.push_back(thisPath);
+    minLen = thisPath.length();
+    std::cout << std::setw(recursionDepth) << std::right << "Found path" << std::endl;
     return;
   }
 
@@ -126,26 +87,75 @@ void ShortestPathFinder(vector<string>& paths, string thisPath, MazeCell *thisCe
       // if next cell is not nullptr, check next cell
 
       thisPath += mv;
-      ShortestPathFinder(paths, thisPath, nextCell, itemsFound, recursionDepth + 1);
+      ShortestPathFinder(nextCell, paths, thisPath, itemsFound, recursionDepth + 1);
       thisPath.pop_back();
 
     }
   }
-
   return;
 }
-const string netID = "aloga";
 
+string TwistyPathFinder(MazeCell *thisCell, char thisMove = '\0',unordered_map<MazeCell*, int> ptrCache = {} ,unordered_set<string> itemsFound = {}, int recursionDepth = 1) {
+  // static size_t minLen = 999;
+  std::cout << std::setw(recursionDepth) << std::right << thisMove << std::endl;
+  if (ptrCache[thisCell] >= 2) {
+    return "";
+  }
+
+  ptrCache.count(thisCell) ? ptrCache[thisCell]++ : ptrCache[thisCell] = 1;
+
+  if (!thisCell->whatsHere.empty()) {
+    if (itemsFound.count(thisCell->whatsHere)) {
+      return "";
+    }
+    itemsFound.insert(thisCell->whatsHere);
+  }
+
+  if (itemsFound.size() == 3) {
+    return string(1, thisMove);
+  }
+
+  for (char mv : {'N', 'E', 'S', 'W'}) {
+
+    if (MazeCell *nextCell = MoveCell(mv, thisCell)) {
+      // if next cell is not nullptr, check next cell
+      string path = TwistyPathFinder(nextCell, mv, ptrCache, itemsFound, recursionDepth + 1);
+      if (!path.empty()) {
+        return string(1, thisMove) + path;
+      }
+
+    }
+  }
+  return "";
+}
+
+string GetPath(MazeCell* start) {
+  vector<string> paths;
+  ShortestPathFinder(start, paths);
+
+  string shortestPath = paths.at(0);
+  for (string& path : paths) {
+    if (path.length() < shortestPath.length()) {
+      shortestPath = path;
+    }
+  }
+  return shortestPath;
+}
+
+// vector<string> GetTwistyPath(MazeCell* start) {
+//   vector<string> paths;
+//   TwistyPathFinder(start);
+
+//   return paths;
+// }
+const string netID = "aloga";
 int main() {
   Maze m(4, 4);
-  MazeCell *start = m.mazeFor(netID);
-  unordered_set<string> itemsFound;
-  itemsFound.reserve(3);
-  // string finalPath = PathFinder('\0', start, itemsFound, 1);
-  vector<string> finalPaths;
-  ShortestPathFinder(finalPaths, string(1, '\0'), start, itemsFound, 1);
-  for (string& path : finalPaths) {
-    std::cout << "Path: " << path << std::endl;
-  }
-  // std::cout << "Final Path: " << finalPath << std::endl;
+  // MazeCell *start = m.mazeFor(netID);
+  MazeCell* start = m.twistyMazeFor(netID);
+  string finalPath = TwistyPathFinder(start);
+  // for (string& path : paths) {
+  //   std::cout << "Path: " << path << std::endl;
+  // }
+  std::cout << "Final Path: " << finalPath << std::endl;
 }

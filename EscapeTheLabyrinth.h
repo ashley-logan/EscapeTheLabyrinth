@@ -22,8 +22,8 @@ const string kYourNetID = "aloga";
 
 /* Change these constants to contain the paths out of your mazes. */
 const string kPathOutOfRegularMaze = "ESWSSNNENESESSNWSW";
-const string pathOutRegTest = "EESESSNNWNWSWSSNNENESESWSW";
-const string kPathOutOfTwistyMaze = "ENSESSWENSSWWNWE";
+const string kPathOutOfTwistyMaze = "WENNSWESEWE";
+
 
 
 void MovePtr(MazeCell*& curr, char c) {

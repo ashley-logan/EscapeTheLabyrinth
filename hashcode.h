@@ -15,7 +15,6 @@
 #include <string>
 #include <utility>
 #include <map>
-
 static const int HASH_SEED = 5381;               // Starting point for first cycle
 static const int HASH_MULTIPLIER = 33;           // Multiplier for each cycle
 static const int HASH_MASK = unsigned(-1) >> 1;  // All 1 bits except the sign

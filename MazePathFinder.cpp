@@ -1,11 +1,13 @@
 #include "maze.h"
 #include <iomanip>
 #include <iostream>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+using std::queue;
 using std::string;
 using std::unordered_map;
 using std::unordered_set;
@@ -99,35 +101,48 @@ void ShortestPathFinder(MazeCell *thisCell, vector<string> &paths,
 }
 
 string IterativePathFinder(MazeCell *start) {
-  vector<string> paths = {};
-  string thisPath;
+  // problem is that items found is shared across all paths being attempted
+  queue<string> paths = {};
+  string thisPath = string(1, '\0');
+  paths.push(thisPath);
+  unordered_map<string, MazeCell *> cellMap = {};
+  unordered_map<string, unordered_set<string>> itemsMap = {};
+  cellMap[thisPath] = start;
   int checks = 0;
   unordered_set<string> items = {};
   bool checkBacktrack = true;
-  MazeCell *currCell = start;
-  do {
+
+  while (!paths.empty() && checks < 3000) {
+    thisPath = paths.front();
+    paths.pop();
+    MazeCell *currCell = cellMap.at(thisPath);
+    cellMap.erase(thisPath);
+
     for (char mv : {'N', 'E', 'S', 'W'}) {
-      if (checkBacktrack && isBacktrack('\0', mv)) {
+      // check directions
+      if (checkBacktrack && isBacktrack(thisPath.back(), mv)) {
         continue;
       }
 
-      MazeCell *nextCell = MoveCell(mv, currCell);
-      if (nextCell) {
+      if (MazeCell *nextCell = MoveCell(mv, currCell)) {
         if (!nextCell->whatsHere.empty()) {
-          // if cell contains item
-          if (items.count(nextCell->whatsHere) == 0) {
-            // if item has not already been found
-            items.insert(nextCell->whatsHere);
-          } else {
+          if (items.count(nextCell->whatsHere)) {
             continue;
           }
-          currCell = nextCell; // continue iteration on next cell
+          items.insert(nextCell->whatsHere);
+          if (items.size() >= 3) {
+            return thisPath + mv;
+          }
         }
-        thisPath.push_back(mv);
+
+        std::cout << thisPath + mv << "\n";
+        paths.push(thisPath + mv);
+        cellMap[thisPath + mv] = nextCell;
       }
     }
-
-  } while (checks < 5000);
+    checks++;
+  }
+  return "";
 }
 
 void ShortestTwistyPathFinder(MazeCell *thisCell, vector<string> &paths,
@@ -240,12 +255,12 @@ vector<string> GetTwistyPath(MazeCell *start) {
 const string netID = "aloga";
 int main() {
   Maze m(4, 4);
-  // MazeCell *start = m.mazeFor(netID);
-  MazeCell *start = m.twistyMazeFor(netID);
-  // string finalPath = TwistyPathFinder(start);
-  vector<string> paths = GetTwistyPath(start);
-  for (string &path : paths) {
-    std::cout << "Path: " << path << std::endl;
-  }
-  // std::cout << "Final Path: " << finalPath << std::endl;
+  MazeCell *start = m.mazeFor(netID);
+  // MazeCell *start = m.twistyMazeFor(netID);
+  string finalPath = IterativePathFinder(start);
+  // vector<string> paths = GetTwistyPath(start);
+  // for (string &path : paths) {
+  //   std::cout << "Path: " << path << std::endl;
+  // }
+  std::cout << "Final Path: " << finalPath << std::endl;
 }

@@ -31,6 +31,7 @@ valgrind_tests:
 	valgrind --tool=memcheck --leak-check=yes ./tests.exe
 
 build_pathfinder:
+	rm -f MazePathFinder.exe
 	clang++ MazePathFinder.cpp -o MazePathFinder.exe
 
 run_pathfinder:

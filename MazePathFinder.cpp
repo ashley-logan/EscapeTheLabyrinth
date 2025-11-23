@@ -101,47 +101,54 @@ void ShortestPathFinder(MazeCell *thisCell, vector<string> &paths,
 }
 
 string IterativePathFinder(MazeCell *start) {
-  // problem is that items found is shared across all paths being attempted
-  queue<string> paths = {};
-  string thisPath = string(1, '\0');
-  paths.push(thisPath);
-  unordered_map<string, MazeCell *> cellMap = {};
-  unordered_map<string, unordered_set<string>> itemsMap = {};
-  cellMap[thisPath] = start;
-  int checks = 0;
-  unordered_set<string> items = {};
-  bool checkBacktrack = true;
+  struct Path {
+    MazeCell *cellPtr;
+    string pathStr;
+    unordered_set<string> itemSet;
+    bool checkBacktrack = true;
+  };
+  queue<Path> paths = {};
+  paths.push({start, string(1, '\0'), {}, true});
 
-  while (!paths.empty() && checks < 3000) {
-    thisPath = paths.front();
+  while (!paths.empty()) {
+    Path thisPath = paths.front();
     paths.pop();
-    MazeCell *currCell = cellMap.at(thisPath);
-    cellMap.erase(thisPath);
+    std::cout << "popped path: " << thisPath.pathStr << "\n";
 
     for (char mv : {'N', 'E', 'S', 'W'}) {
       // check directions
-      if (checkBacktrack && isBacktrack(thisPath.back(), mv)) {
+      if (thisPath.checkBacktrack && isBacktrack(thisPath.pathStr.back(), mv)) {
+        std::cout << mv << " is backtrack\n";
         continue;
       }
 
-      if (MazeCell *nextCell = MoveCell(mv, currCell)) {
-        if (!nextCell->whatsHere.empty()) {
-          if (items.count(nextCell->whatsHere)) {
-            continue;
-          }
-          items.insert(nextCell->whatsHere);
-          if (items.size() >= 3) {
-            return thisPath + mv;
-          }
+      if (MazeCell *nextCell = MoveCell(mv, thisPath.cellPtr)) {
+        if (thisPath.itemSet.count(nextCell->whatsHere)) {
+          continue;
         }
 
-        std::cout << thisPath + mv << "\n";
-        paths.push(thisPath + mv);
-        cellMap[thisPath + mv] = nextCell;
+        Path newPath;
+        newPath.itemSet.insert(thisPath.itemSet.begin(),
+                               thisPath.itemSet.end());
+        if (!nextCell->whatsHere.empty()) {
+
+          newPath.itemSet.insert(nextCell->whatsHere);
+          if (newPath.itemSet.size() >= 3) {
+            std::cout << "All items found!\n";
+            return thisPath.pathStr.substr(1) + mv;
+          }
+          newPath.checkBacktrack = false;
+        }
+        std::cout << "pushed path: " << thisPath.pathStr + mv << "\n";
+        newPath.pathStr = thisPath.pathStr + mv;
+        newPath.cellPtr = nextCell;
+        paths.push(newPath);
+      } else {
+        std::cout << "cannot move " << mv << "\n";
       }
     }
-    checks++;
   }
+  std::cout << "No valid path found\n";
   return "";
 }
 

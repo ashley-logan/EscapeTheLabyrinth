@@ -1,6 +1,7 @@
 #include "maze.h"
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <queue>
 #include <string>
 #include <unordered_map>
@@ -8,26 +9,11 @@
 #include <vector>
 
 using std::queue;
+using std::shared_ptr;
 using std::string;
 using std::unordered_map;
 using std::unordered_set;
 using std::vector;
-
-bool isBacktrack(char prevMove, char nextMove) {
-  // returns true if prevMove and nextMove are opposites
-  switch (nextMove) {
-  case 'N':
-    return prevMove == 'S';
-  case 'E':
-    return prevMove == 'W';
-  case 'S':
-    return prevMove == 'N';
-  case 'W':
-    return prevMove == 'E';
-  default:
-    return false;
-  }
-}
 
 MazeCell *MoveCell(char thisMove, MazeCell *thisCell) {
   switch (thisMove) {
@@ -52,104 +38,127 @@ MazeCell *MoveCell(char thisMove, MazeCell *thisCell) {
   T* const = pointer read-only; data read-and-write
   const T* const = pointer read-only; data read-only
 */
-
-void ShortestPathFinder(MazeCell *thisCell, vector<string> &paths,
-                        string thisPath = string(1, '\0'),
-                        unordered_set<string> itemsFound = {},
-                        int recursionDepth = 1) {
-  static size_t minLen = 999;
-  std::cout << std::setw(recursionDepth) << std::right << thisPath.back()
-            << std::endl;
-  bool allowBacktrack = false;
-
-  if (thisPath.length() > minLen) {
-    return;
-  }
-
-  if (!thisCell->whatsHere.empty()) {
-    if (itemsFound.count(thisCell->whatsHere)) {
-      return;
-    }
-    itemsFound.insert(thisCell->whatsHere);
-    allowBacktrack = true;
-  }
-
-  if (itemsFound.size() == 3) {
-    paths.push_back(thisPath);
-    minLen = thisPath.length();
-    std::cout << std::setw(recursionDepth) << std::right << "Found path"
-              << std::endl;
-    return;
-  }
-
-  for (char mv : {'N', 'E', 'S', 'W'}) {
-    if (!allowBacktrack && isBacktrack(thisPath.back(), mv)) {
-      // if next move backtracks and backtracking is not allowed, skip move
-      continue;
-    }
-
-    if (MazeCell *nextCell = MoveCell(mv, thisCell)) {
-      // if next cell is not nullptr, check next cell
-
-      thisPath += mv;
-      ShortestPathFinder(nextCell, paths, thisPath, itemsFound,
-                         recursionDepth + 1);
-      thisPath.pop_back();
-    }
-  }
-  return;
-}
-
-string IterativePathFinder(MazeCell *start) {
+string PathFinder(MazeCell *start, bool isTwisty = false) {
+  // back track check independent of cardinality
   struct Path {
-    MazeCell *cellPtr;
+    MazeCell *currCell;
     string pathStr;
-    unordered_set<string> itemSet;
-    bool checkBacktrack = true;
+    unordered_map<MazeCell *, int> cache;
+    shared_ptr<unordered_set<string>> items;
   };
-  queue<Path> paths = {};
-  paths.push({start, string(1, '\0'), {}, true});
+
+  // only condition to not check backtrack, is if !isTwisty && prevCellHadItem
+  queue<Path> paths;
+  paths.push(
+      {.currCell = start, .items = make_shared<unordered_set<string>>()});
 
   while (!paths.empty()) {
     Path thisPath = paths.front();
     paths.pop();
-    std::cout << "popped path: " << thisPath.pathStr << "\n";
 
     for (char mv : {'N', 'E', 'S', 'W'}) {
-      // check directions
-      if (thisPath.checkBacktrack && isBacktrack(thisPath.pathStr.back(), mv)) {
-        std::cout << mv << " is backtrack\n";
-        continue;
-      }
+      if (MazeCell *nextCell = MoveCell(mv, thisPath.currCell)) {
 
-      if (MazeCell *nextCell = MoveCell(mv, thisPath.cellPtr)) {
-        if (thisPath.itemSet.count(nextCell->whatsHere)) {
+        if (thisPath.cache[nextCell] >= 2) {
+          // if this cell has been visited two or more times, prune this path
           continue;
         }
 
-        Path newPath;
-        newPath.itemSet.insert(thisPath.itemSet.begin(),
-                               thisPath.itemSet.end());
-        if (!nextCell->whatsHere.empty()) {
-
-          newPath.itemSet.insert(nextCell->whatsHere);
-          if (newPath.itemSet.size() >= 3) {
-            std::cout << "All items found!\n";
-            return thisPath.pathStr.substr(1) + mv;
-          }
-          newPath.checkBacktrack = false;
+        if (thisPath.items->count(nextCell->whatsHere)) {
+          // if this path has already picked up the item here, prune path
+          continue;
         }
-        std::cout << "pushed path: " << thisPath.pathStr + mv << "\n";
-        newPath.pathStr = thisPath.pathStr + mv;
-        newPath.cellPtr = nextCell;
+
+        Path newPath = {nextCell, thisPath.pathStr + mv, thisPath.cache};
+        newPath.cache[thisPath.currCell]++;
+
+        if (!nextCell->whatsHere.empty()) {
+          // if cell has a new item, create a deep copy of the current items set
+          newPath.items = make_shared<unordered_set<string>>(*thisPath.items);
+          // insert the new item
+          newPath.items->insert(nextCell->whatsHere);
+
+          if (newPath.items->size() >= 3) {
+            // if new items has 3 or more, path found, return path
+            return newPath.pathStr;
+          }
+        } else {
+          // if no changes to items are made, share the set
+          newPath.items = thisPath.items;
+        }
+
+        // push the new path into the front of the queue
         paths.push(newPath);
-      } else {
-        std::cout << "cannot move " << mv << "\n";
       }
     }
   }
-  std::cout << "No valid path found\n";
   return "";
+}
+
+vector<string> ShortestPathFinder(MazeCell *start) {
+  // back track check independent of cardinality
+  struct Path {
+    MazeCell *currCell;
+    string pathStr;
+    unordered_map<MazeCell *, int> cache;
+    shared_ptr<unordered_set<string>> items;
+  };
+  vector<string> escapePaths;
+  size_t minLen = 999;
+
+  // only condition to not check backtrack, is if !isTwisty && prevCellHadItem
+  queue<Path> paths;
+  paths.push(
+      {.currCell = start, .items = make_shared<unordered_set<string>>()});
+
+  while (!paths.empty()) {
+    Path thisPath = paths.front();
+    paths.pop();
+
+    if (thisPath.pathStr.length() >= minLen) {
+      continue;
+    }
+
+    for (char mv : {'N', 'E', 'S', 'W'}) {
+      if (MazeCell *nextCell = MoveCell(mv, thisPath.currCell)) {
+
+        if (thisPath.cache[nextCell] >= 2) {
+          // if this cell has been visited two or more times, prune this path
+          continue;
+        }
+
+        if (thisPath.items->count(nextCell->whatsHere)) {
+          // if this path has already picked up the item here, prune path
+          continue;
+        }
+
+        Path newPath = {nextCell, thisPath.pathStr + mv, thisPath.cache};
+        newPath.cache[thisPath.currCell]++;
+
+        if (!nextCell->whatsHere.empty()) {
+          // if cell has a new item, create a deep copy of the current items set
+          newPath.items = make_shared<unordered_set<string>>(*thisPath.items);
+          // insert the new item
+          newPath.items->insert(nextCell->whatsHere);
+
+          if (newPath.items->size() >= 3) {
+            // if new items has 3 or more, path found, add path
+            minLen = newPath.pathStr.length();
+            escapePaths.push_back(newPath.pathStr);
+            continue;
+          }
+        } else {
+          // if no changes to items are made, share the set
+          newPath.items = thisPath.items;
+        }
+
+        // push the new path into the front of the queue
+        std::cout << thisPath.pathStr + mv << "\n";
+        paths.push(newPath);
+      }
+    }
+  }
+  return escapePaths;
 }
 
 void ShortestTwistyPathFinder(MazeCell *thisCell, vector<string> &paths,
@@ -201,73 +210,20 @@ void ShortestTwistyPathFinder(MazeCell *thisCell, vector<string> &paths,
   return;
 }
 
-string TwistyPathFinder(MazeCell *thisCell, char thisMove = '\0',
-                        unordered_map<MazeCell *, int> ptrCache = {},
-                        unordered_set<string> itemsFound = {},
-                        int recursionDepth = 1) {
-  // static size_t minLen = 999;
-  std::cout << std::setw(recursionDepth) << std::right << thisMove << std::endl;
-
-  if (ptrCache[thisCell] >= 2) {
-    return "";
-  }
-
-  ptrCache.count(thisCell) ? ptrCache[thisCell]++ : ptrCache[thisCell] = 1;
-
-  if (!thisCell->whatsHere.empty()) {
-    if (itemsFound.count(thisCell->whatsHere)) {
-      return "";
-    }
-    itemsFound.insert(thisCell->whatsHere);
-  }
-
-  if (itemsFound.size() == 3) {
-    return string(1, thisMove);
-  }
-
-  for (char mv : {'N', 'E', 'S', 'W'}) {
-    if (MazeCell *nextCell = MoveCell(mv, thisCell)) {
-      // if next cell is not nullptr, check next cell
-
-      string path = TwistyPathFinder(nextCell, mv, ptrCache, itemsFound,
-                                     recursionDepth + 1);
-      if (!path.empty()) {
-        return string(1, thisMove) + path;
-      }
-    }
-  }
-  return "";
-}
-
-string GetPath(MazeCell *start) {
-  vector<string> paths;
-  ShortestPathFinder(start, paths);
-
-  string shortestPath = paths.at(0);
-  for (string &path : paths) {
-    if (path.length() < shortestPath.length()) {
-      shortestPath = path;
-    }
-  }
-  return shortestPath;
-}
-
-vector<string> GetTwistyPath(MazeCell *start) {
-  vector<string> paths;
-  ShortestTwistyPathFinder(start, paths);
-
-  return paths;
-}
-
 const string netID = "aloga";
+
 int main() {
   Maze m(4, 4);
-  MazeCell *start = m.mazeFor(netID);
-  // MazeCell *start = m.twistyMazeFor(netID);
-  string finalPath = IterativePathFinder(start);
-  // vector<string> paths = GetTwistyPath(start);
-  // for (string &path : paths) {
-  //   std::cout << "Path: " << path << std::endl;
-  // }
-  std::cout << "Final Path: " << finalPath << std::endl;
+  MazeCell *startReg = m.mazeFor(netID);
+  MazeCell *startTwisty = m.twistyMazeFor(netID);
+  vector<string> allRegPaths = ShortestPathFinder(startReg);
+  vector<string> allTwistyPaths = ShortestPathFinder(startTwisty);
+  std::cout << "All regular paths: \n";
+  for (string path : allRegPaths) {
+    std::cout << path << "\n";
+  }
+  std::cout << "All twisty paths: \n";
+  for (string path : allTwistyPaths) {
+    std::cout << path << "\n";
+  }
 }

@@ -3,11 +3,11 @@
 #include <iostream>
 #include <memory>
 #include <queue>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
 using std::queue;
 using std::shared_ptr;
 using std::string;
@@ -212,7 +212,38 @@ void ShortestTwistyPathFinder(MazeCell *thisCell, vector<string> &paths,
 
 const string netID = "aloga";
 
-int main() {
+/*
+Cli arguments:
+ -s --seed <any input> : pass in any combination of letters which will determine
+the maze layout
+
+OR
+
+ --rand : which prompts the program to create a random seed
+
+OR
+
+ --default : which will use "default" as the seed, this will produce the same
+maze everytime, THIS IS THE DEFAULT OPTION IF NO ARGS VALID ARGS ARE PASSED
+
+
+
+*/
+
+bool checkSeedArg(char *arg) { if a }
+
+int main(int argc, char *argv[]) {
+  string arg;
+  for (int i = 1; i < argc; i++) {
+    arg = argv[1];
+    if ((arg == "-s" || arg == "--seed") && i + 1 < argc) {
+      checkSeedArg() arg = argv[i + 1];
+    }
+  }
+
+  if (!seedSet) {
+    std::random_device rd;
+  }
   Maze m(4, 4);
   MazeCell *startReg = m.mazeFor(netID);
   MazeCell *startTwisty = m.twistyMazeFor(netID);

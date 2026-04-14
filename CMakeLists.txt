@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 3.10.0)
-project(EscapeTheLabyrinth VERSION 0.1.0 LANGUAGES C CXX)
+cmake_minimum_required(VERSION 4.0.0)
+project(EscapeTheLabyrinth CXX)
 
-add_executable(EscapeTheLabyrinth main.cpp)
-
+add_executable(maze-game main.cpp)

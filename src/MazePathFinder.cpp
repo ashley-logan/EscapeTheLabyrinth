@@ -230,14 +230,14 @@ maze everytime, THIS IS THE DEFAULT OPTION IF NO ARGS VALID ARGS ARE PASSED
 
 */
 
-bool checkSeedArg(char *arg) { if a }
+bool checkSeedArg(string arg) { if a }
 
 int main(int argc, char *argv[]) {
   string arg;
   for (int i = 1; i < argc; i++) {
     arg = argv[1];
     if ((arg == "-s" || arg == "--seed") && i + 1 < argc) {
-      checkSeedArg() arg = argv[i + 1];
+      checkSeedArg(argv[i + 1]);
     }
   }
 

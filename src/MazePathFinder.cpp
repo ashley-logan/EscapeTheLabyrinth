@@ -1,9 +1,9 @@
 #include "maze.h"
+#include "args.h"
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <queue>
-#include <random>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -230,23 +230,14 @@ maze everytime, THIS IS THE DEFAULT OPTION IF NO ARGS VALID ARGS ARE PASSED
 
 */
 
-bool checkSeedArg(string arg) { if a }
 
 int main(int argc, char *argv[]) {
-  string arg;
-  for (int i = 1; i < argc; i++) {
-    arg = argv[1];
-    if ((arg == "-s" || arg == "--seed") && i + 1 < argc) {
-      checkSeedArg(argv[i + 1]);
-    }
-  }
+  Parser cli(argc, argv);
+  std::cout << "Using seed " << cli.seedStr << " for the mazes\n";
 
-  if (!seedSet) {
-    std::random_device rd;
-  }
   Maze m(4, 4);
-  MazeCell *startReg = m.mazeFor(netID);
-  MazeCell *startTwisty = m.twistyMazeFor(netID);
+  MazeCell *startReg = m.mazeFor(cli.seedStr);
+  MazeCell *startTwisty = m.twistyMazeFor(cli.seedStr);
   vector<string> allRegPaths = ShortestPathFinder(startReg);
   vector<string> allTwistyPaths = ShortestPathFinder(startTwisty);
   std::cout << "All regular paths: \n";
